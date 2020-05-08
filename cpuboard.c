@@ -10,14 +10,22 @@
 
 #include <stdio.h>
 
-Uword MAR;
-Uword IR;
-
 int step_ST(Cpub *cpub);
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
 void unknown_instruction_code(const Uword code);
 void bad_oprand_B(const Uword code);
+
+const Uword ACC = 0x00;
+const Uword IX = 0x01;
+const Uword IMMEDIATE_ADDRESS = 0x02;
+const Uword ABSOLUTE_PROGRAM_ADDRESS = 0x04;
+const Uword ABSOLUTE_DATA_ADDRESS = 0x05;
+const Uword IX_MODIFICATION_PROGRAM_ADDRESS = 0x06;
+const Uword IX_MODIFICATION_DATA_ADDRESS = 0x07;
+
+Uword MAR;
+Uword IR;
 
 /*=============================================================================
  *   Simulation of a Single Instruction
@@ -52,14 +60,6 @@ int step(Cpub *cpub) {
 }
 
 int step_ST(Cpub *cpub) {
-    const Uword ACC = 0x00;
-    const Uword IX = 0x01;
-    const Uword IMMEDIATE_ADDRESS = 0x02;
-    const Uword ABSOLUTE_PROGRAM_ADDRESS = 0x04;
-    const Uword ABSOLUTE_DATA_ADDRESS = 0x05;
-    const Uword IX_MODIFICATION_PROGRAM_ADDRESS = 0x06;
-    const Uword IX_MODIFICATION_DATA_ADDRESS = 0x07;
-
     int return_status = RUN_HALT;
 
     const Uword OPERAND_A = decrypt_operand_a(IR);
@@ -108,14 +108,19 @@ int step_ST(Cpub *cpub) {
     return return_status;
 }
 
-Uword decrypt_operand_a(const Uword code) {
-    const Uword mask = 0x80;
-    return code & mask;
+Uword decrypt_operand_a(const Uword CODE) {
+    const Uword MASK = 0x80;
+    return CODE & MASK;
 }
 
-Uword decrypt_operand_b(const Uword code) {
-    const Uword mask = 0x07;
-    return code & mask;
+Uword decrypt_operand_b(const Uword CODE) {
+    const Uword MASK = 0x07;
+    Uword operand_b = CODE & MASK;
+
+    if (operand_b == 0x02) {
+        operand_b = 0x03;
+    }
+    return operand_b;
 }
 
 void unknown_instruction_code(const Uword code) {
