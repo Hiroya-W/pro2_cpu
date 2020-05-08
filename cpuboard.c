@@ -26,10 +26,10 @@
 #define IX_MODIFICATION_PROGRAM_ADDRESS 0x06
 #define IX_MODIFICATION_DATA_ADDRESS 0x07
 
-int step_ST(Cpub *cpub);
-int step_LD(Cpub *cpub);
-int step_OUT(Cpub *cpub);
-int step_IN(Cpub *cpub);
+int step_ST();
+int step_LD();
+int step_OUT();
+int step_IN();
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
 void unknown_instruction_code(const Uword code);
@@ -38,7 +38,11 @@ void bad_oprand_B(const Uword code);
 Uword MAR;
 Uword IR;
 
-int step(Cpub *cpub) {
+Cpub *cpub;
+
+int step(Cpub *step_cpub) {
+    cpub = step_cpub;
+
     int return_status = RUN_HALT;
 
     const Uword MASK = 0xf0;
@@ -67,16 +71,16 @@ int step(Cpub *cpub) {
              * OUT + IN
              */
             if ((IR & 0xf8) == OUT) {
-                return_status = step_OUT(cpub);
+                return_status = step_OUT();
             } else {
-                return_status = step_IN(cpub);
+                return_status = step_IN();
             }
             break;
         case LD:
-            return_status = step_LD(cpub);
+            return_status = step_LD();
             break;
         case ST:
-            return_status = step_ST(cpub);
+            return_status = step_ST();
             break;
         default:
             unknown_instruction_code(IR);
@@ -87,11 +91,11 @@ int step(Cpub *cpub) {
     return return_status;
 }
 
-int step_OUT(Cpub *cpub) { return RUN_HALT; }
+int step_OUT() { return RUN_HALT; }
 
-int step_IN(Cpub *cpub) { return RUN_HALT; }
+int step_IN() { return RUN_HALT; }
 
-int step_LD(Cpub *cpub) {
+int step_LD() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -137,7 +141,7 @@ int step_LD(Cpub *cpub) {
     return RUN_STEP;
 }
 
-int step_ST(Cpub *cpub) {
+int step_ST() {
     int return_status = RUN_HALT;
 
     const Uword OPERAND_A = decrypt_operand_a(IR);
