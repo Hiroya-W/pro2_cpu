@@ -13,7 +13,7 @@
 #define NOP 0x00
 #define HLT 0x0f
 #define OUT 0x10
-#define IN 0x18
+#define IN 0x1f
 #define RCF 0x20
 #define SCF 0x2f
 
