@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 int step_ST(Cpub *cpub);
+int step_LD(Cpub *cpub);
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
 void unknown_instruction_code(const Uword code);
@@ -35,6 +36,7 @@ int step(Cpub *cpub) {
 
     const Uword NOP = 0x00;
     const Uword HLT = 0x0f;
+    const Uword LD = 0x60;
     const Uword ST = 0x70;
 
     const Uword MASK = 0xf0;
@@ -50,13 +52,53 @@ int step(Cpub *cpub) {
         return RUN_HALT;
     }
 
-    if (INSTRUCTION_CODE == ST) {
+    if (INSTRUCTION_CODE == LD) {
+        return_status = step_LD(cpub);
+    } else if (INSTRUCTION_CODE == ST) {
         return_status = step_ST(cpub);
     } else {
         unknown_instruction_code(IR & MASK);
         return RUN_HALT;
     }
     return return_status;
+}
+
+int step_LD(Cpub *cpub) {
+    const Uword OPERAND_A = decrypt_operand_a(IR);
+    const Uword OPERAND_B = decrypt_operand_b(IR);
+
+    Uword second_word;
+    Uword operand_b_value;
+
+    MAR = cpub->pc;
+    cpub->pc++;
+    second_word = cpub->mem[0x000 + MAR];
+
+    if (OPERAND_B == ACC) {
+        operand_b_value = cpub->acc;
+    } else if (OPERAND_B == IX) {
+        operand_b_value = cpub->ix;
+    } else if (OPERAND_B == IMMEDIATE_ADDRESS) {
+        operand_b_value = second_word;
+    } else if (OPERAND_B == ABSOLUTE_PROGRAM_ADDRESS) {
+        operand_b_value = cpub->mem[0x000 + second_word];
+    } else if (OPERAND_B == ABSOLUTE_DATA_ADDRESS) {
+        operand_b_value = cpub->mem[0x100 + second_word];
+    } else if (OPERAND_B == IX_MODIFICATION_PROGRAM_ADDRESS) {
+        operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
+    } else if (OPERAND_B == IX_MODIFICATION_DATA_ADDRESS) {
+        operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
+    } else {
+        return RUN_HALT;
+    }
+
+    if (OPERAND_A == ACC) {
+        cpub->acc = operand_b_value;
+    } else {
+        cpub->ix = operand_b_value;
+    }
+
+    return RUN_STEP;
 }
 
 int step_ST(Cpub *cpub) {
@@ -102,7 +144,7 @@ int step_ST(Cpub *cpub) {
         cpub->mem[0x100 + cpub->ix + second_word] = operand_a_value;
         return_status = RUN_STEP;
     } else {
-        return_status = RUN_HALT;
+        return RUN_HALT;
     }
 
     return return_status;
