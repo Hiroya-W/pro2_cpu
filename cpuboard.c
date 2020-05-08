@@ -12,6 +12,9 @@
 
 #define NOP 0x00
 #define HLT 0x0f
+#define OUT 0x10
+#define IN 0x18
+
 #define LD 0x60
 #define ST 0x70
 
@@ -25,6 +28,8 @@
 
 int step_ST(Cpub *cpub);
 int step_LD(Cpub *cpub);
+int step_OUT(Cpub *cpub);
+int step_IN(Cpub *cpub);
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
 void unknown_instruction_code(const Uword code);
@@ -46,7 +51,7 @@ int step(Cpub *cpub) {
     switch (INSTRUCTION_CODE) {
         case 0x00:
             /*
-             * 制御命令 + JAL + JR
+             * NOP + HLT + JAL + JR
              */
             if ((IR & 0xf8) == NOP) {
                 return_status = RUN_STEP;
@@ -55,6 +60,16 @@ int step(Cpub *cpub) {
             } else {
                 unknown_instruction_code(IR);
                 return_status = RUN_HALT;
+            }
+            break;
+        case 0x10:
+            /*
+             * OUT + IN
+             */
+            if ((IR & 0xf8) == OUT) {
+                return_status = step_OUT(cpub);
+            } else {
+                return_status = step_IN(cpub);
             }
             break;
         case LD:
@@ -71,6 +86,10 @@ int step(Cpub *cpub) {
 
     return return_status;
 }
+
+int step_OUT(Cpub *cpub) { return RUN_HALT; }
+
+int step_IN(Cpub *cpub) { return RUN_HALT; }
 
 int step_LD(Cpub *cpub) {
     const Uword OPERAND_A = decrypt_operand_a(IR);
