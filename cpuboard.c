@@ -14,6 +14,8 @@
 #define HLT 0x0f
 #define OUT 0x10
 #define IN 0x18
+#define RCF 0x20
+#define SCF 0x2f
 
 #define LD 0x60
 #define ST 0x70
@@ -30,6 +32,8 @@ int step_ST();
 int step_LD();
 int step_OUT();
 int step_IN();
+int step_RCF();
+int step_SCF();
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
 void unknown_instruction_code(const Uword code);
@@ -76,6 +80,16 @@ int step(Cpub *step_cpub) {
                 return_status = step_IN();
             }
             break;
+        case 0x20:
+            /*
+             * RCF + SCF
+             */
+            if ((IR & 0xf8) == RCF) {
+                return_status = step_RCF();
+            } else {
+                return_status = step_SCF();
+            }
+            break;
         case LD:
             return_status = step_LD();
             break;
@@ -94,6 +108,16 @@ int step(Cpub *step_cpub) {
 int step_OUT() { return RUN_HALT; }
 
 int step_IN() { return RUN_HALT; }
+
+int step_RCF() {
+    cpub->cf = 0;
+    return RUN_STEP;
+}
+
+int step_SCF() {
+    cpub->cf = 1;
+    return RUN_STEP;
+}
 
 int step_LD() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
