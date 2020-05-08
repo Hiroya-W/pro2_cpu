@@ -14,10 +14,8 @@ Uword MAR;
 Uword IR;
 
 int step_ST(Cpub *cpub);
-int run_ST(Cpub *cpub, const Uword value, const Uword OPERAND_B);
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
-Uword decrypt_second_word(Cpub *cpub, const Uword OPERAND_B);
 void unknown_instruction_code(const Uword code);
 void bad_oprand_B(const Uword code);
 
@@ -110,33 +108,6 @@ int step_ST(Cpub *cpub) {
     return return_status;
 }
 
-int run_ST(Cpub *cpub, const Uword value, const Uword OPERAND_B) {
-    const Uword ABSOLUTE_PROGRAM_ADDRESS = 0x04;
-    const Uword ABSOLUTE_DATA_ADDRESS = 0x05;
-    const Uword IX_MODIFICATION_PROGRAM_ADDRESS = 0x06;
-    const Uword IX_MODIFICATION_DATA_ADDRESS = 0x07;
-
-    int return_status = RUN_HALT;
-
-    return return_status;
-}
-
-int run_ST1(Cpub *cpub, const Uword OPERAND_A, const Uword SECOND_WORD) {
-    int return_status = RUN_HALT;
-    const Uword ACC = 0x00;
-    const Uword IX = 0x01;
-    if (OPERAND_A == ACC) {
-        cpub->mem[0x100 + SECOND_WORD] = cpub->acc;
-        return_status = RUN_STEP;
-    } else if (OPERAND_A == IX) {
-        cpub->mem[0x100 + SECOND_WORD] = cpub->ix;
-        return_status = RUN_STEP;
-    } else {
-        return_status = RUN_HALT;
-    }
-    return return_status;
-}
-
 Uword decrypt_operand_a(const Uword code) {
     const Uword mask = 0x80;
     return code & mask;
@@ -145,53 +116,6 @@ Uword decrypt_operand_a(const Uword code) {
 Uword decrypt_operand_b(const Uword code) {
     const Uword mask = 0x07;
     return code & mask;
-}
-
-Uword decrypt_second_word(Cpub *cpub, const Uword OPERAND_B) {
-    const Uword ACC = 0x00;
-    const Uword IX = 0x01;
-    const Uword IMMEDIATE_ADDRESS = 0x02;
-    const Uword ABSOLUTE_PROGRAM_ADDRESS = 0x04;
-    const Uword ABSOLUTE_DATA_ADDRESS = 0x05;
-    const Uword IX_MODIFICATION_PROGRAM_ADDRESS = 0x06;
-    const Uword IX_MODIFICATION_DATA_ADDRESS = 0x07;
-
-    Uword SECOND_WORD_ADDRESS;
-    Uword SECOND_WORD;
-    if (OPERAND_B == ACC) {
-        SECOND_WORD = cpub->acc;
-    } else if (OPERAND_B == IX) {
-        SECOND_WORD = cpub->ix;
-    } else if (OPERAND_B == IMMEDIATE_ADDRESS) {
-        MAR = cpub->pc;
-        cpub->pc++;
-        SECOND_WORD = cpub->mem[0x000 + MAR];
-    } else if (OPERAND_B == ABSOLUTE_PROGRAM_ADDRESS) {
-        MAR = cpub->pc;
-        cpub->pc++;
-        SECOND_WORD = cpub->mem[0x000 + MAR];
-        // SECOND_WORD_ADDRESS = cpub->mem[0x000 + MAR];
-        // SECOND_WORD = cpub->mem[0x000 + SECOND_WORD_ADDRESS];
-    } else if (OPERAND_B == ABSOLUTE_DATA_ADDRESS) {
-        MAR = cpub->pc;
-        cpub->pc++;
-        SECOND_WORD = cpub->mem[0x000 + MAR];
-        // SECOND_WORD_ADDRESS = cpub->mem[0x000 + MAR];
-        // SECOND_WORD = cpub->mem[0x100 + SECOND_WORD_ADDRESS];
-    } else if (OPERAND_B == IX_MODIFICATION_PROGRAM_ADDRESS) {
-        MAR = cpub->pc;
-        cpub->pc++;
-        SECOND_WORD = cpub->mem[0x000 + MAR];
-        // SECOND_WORD_ADDRESS = cpub->mem[0x000 + MAR];
-        // SECOND_WORD = cpub->mem[cpub->ix + 0x000 + SECOND_WORD_ADDRESS];
-    } else if (OPERAND_B == IX_MODIFICATION_DATA_ADDRESS) {
-        MAR = cpub->pc;
-        cpub->pc++;
-        SECOND_WORD = cpub->mem[0x000 + MAR];
-        // SECOND_WORD_ADDRESS = cpub->mem[0x000 + MAR];
-        // SECOND_WORD = cpub->mem[cpub->ix + 0x100 + SECOND_WORD_ADDRESS];
-    }
-    return SECOND_WORD;
 }
 
 void unknown_instruction_code(const Uword code) {
