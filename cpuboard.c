@@ -141,10 +141,6 @@ int step_LD() {
     Uword second_word;
     Uword operand_b_value;
 
-    MAR = cpub->pc;
-    cpub->pc++;
-    second_word = cpub->mem[0x000 + MAR];
-
     switch (OPERAND_B) {
         case ACC:
             operand_b_value = cpub->acc;
@@ -153,18 +149,33 @@ int step_LD() {
             operand_b_value = cpub->ix;
             break;
         case IMMEDIATE_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
             operand_b_value = second_word;
             break;
         case ABSOLUTE_PROGRAM_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
             operand_b_value = cpub->mem[0x000 + second_word];
             break;
         case ABSOLUTE_DATA_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
             operand_b_value = cpub->mem[0x100 + second_word];
             break;
         case IX_MODIFICATION_PROGRAM_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
             operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
             break;
         case IX_MODIFICATION_DATA_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
             operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
             break;
         default:
