@@ -222,7 +222,7 @@ int step_ST() {
 }
 
 Uword decrypt_operand_a(const Uword CODE) {
-    const Uword MASK = 0x80;
+    const Uword MASK = 0x08;
     return CODE & MASK;
 }
 
