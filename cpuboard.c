@@ -22,7 +22,8 @@ enum Instruction_code {
     ADD = 0xB0,
     ADC = 0x90,
     SUB = 0xa0,
-    EOR = 0xC0
+    EOR = 0xC0,
+    BBC = 0x30,
 };
 
 enum Operand_B_3bits {
@@ -45,6 +46,7 @@ int step_ADD();
 int step_ADC();
 int step_SUB();
 int step_EOR();
+int step_BBC();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
 Bit chk_overflow_flag(Uword num1, Uword num2, int ans);
@@ -124,6 +126,9 @@ int step(Cpub *cpub_) {
             break;
         case EOR:
             return_status = step_EOR();
+            break;
+        case BBC:
+            return_status = step_BBC();
             break;
         default:
             unknown_instruction_code(IR);
@@ -355,6 +360,48 @@ int step_EOR() {
         cpub->acc = ans;
     } else {
         cpub->ix = ans;
+    }
+
+    return_status = RUN_STEP;
+    return return_status;
+}
+
+int step_BBC() {
+    enum Branch {
+        ALWAYS,
+        NOT_ZERO,
+        ZERO_OR_POSITIVE,
+        POSITIVE,
+        NO_INPUT,
+        NO_CARRY,
+        GREATER_THAN_OR_EQUAL,
+        GREATER_THAN,
+        OVERFLOW,
+        ZERO,
+        NEGATIVE,
+        ZERO_OR_NEGATIVE,
+        NO_OUTPUT,
+        CARRY,
+        LESS_THAN,
+        LESS_THAN_OR_EQUAL
+    };
+
+    int return_status = RUN_HALT;
+
+    const Uword MASK = 0x0f;
+    const Uword BRANCH_CODE = IR & MASK;
+    Uword second_word;
+
+    MAR = cpub->pc;
+    cpub->pc++;
+    second_word = cpub->mem[0x000 + MAR];
+
+    switch (BRANCH_CODE) {
+        case NOT_ZERO:
+            if (!cpub->zf) {
+                cpub->pc = second_word;
+            }
+            break;
     }
 
     return_status = RUN_STEP;
