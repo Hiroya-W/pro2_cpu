@@ -10,17 +10,18 @@
 
 #include <stdio.h>
 
-#define NOP 0x00
-#define HLT 0x0f
-#define OUT 0x10
-#define IN 0x1f
-#define RCF 0x20
-#define SCF 0x2f
-#define ADD 0xB0
-#define ADC 0x90
-
-#define LD 0x60
-#define ST 0x70
+enum Instruction_code {
+    NOP = 0x00,
+    HLT = 0x0f,
+    OUT = 0x10,
+    IN = 0x1f,
+    RCF = 0x20,
+    SCF = 0x2f,
+    ADD = 0xB0,
+    ADC = 0x90,
+    LD = 0x60,
+    ST = 0x70
+};
 
 enum Operand_B_3bits {
     ACC = 0x00,
