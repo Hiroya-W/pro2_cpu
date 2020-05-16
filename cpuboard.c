@@ -230,8 +230,8 @@ Uword decrypt_operand_b(const Uword CODE) {
     const Uword MASK = 0x07;
     Uword operand_b = CODE & MASK;
 
-    if (operand_b == 0x02) {
-        operand_b = 0x03;
+    if (operand_b == 0x03) {
+        operand_b = 0x02;
     }
     return operand_b;
 }
