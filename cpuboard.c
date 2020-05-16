@@ -22,13 +22,15 @@
 #define LD 0x60
 #define ST 0x70
 
-#define ACC 0x00
-#define IX 0x01
-#define IMMEDIATE_ADDRESS 0x02
-#define ABSOLUTE_PROGRAM_ADDRESS 0x04
-#define ABSOLUTE_DATA_ADDRESS 0x05
-#define IX_MODIFICATION_PROGRAM_ADDRESS 0x06
-#define IX_MODIFICATION_DATA_ADDRESS 0x07
+enum Operand_B_3bits {
+    ACC = 0x00,
+    IX = 0x01,
+    IMMEDIATE_ADDRESS = 0x02,
+    ABSOLUTE_PROGRAM_ADDRESS = 0x04,
+    ABSOLUTE_DATA_ADDRESS = 0x05,
+    IX_MODIFICATION_PROGRAM_ADDRESS = 0x06,
+    IX_MODIFICATION_DATA_ADDRESS = 0x07
+};
 
 int step_OUT();
 int step_IN();
@@ -139,7 +141,6 @@ int step_LD() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
-    Uword second_word;
     Uword operand_b_value;
 
     operand_b_value = get_operand_b_value(OPERAND_B);
@@ -217,7 +218,6 @@ int step_ADD() {
 
     Uword operand_a_value;
     Uword operand_b_value;
-    Uword second_word;
 
     if (OPERAND_A == ACC) {
         operand_a_value = cpub->acc;
@@ -253,7 +253,6 @@ int step_ADC() {
 
     Uword operand_a_value;
     Uword operand_b_value;
-    Uword second_word;
 
     if (OPERAND_A == ACC) {
         operand_a_value = cpub->acc;
