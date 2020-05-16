@@ -45,6 +45,7 @@ Bit chk_negative_flag(int ans);
 Bit chk_zero_flag(char ans);
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
+Uword get_operand_b_value(const Uword OPERAND_B);
 void unknown_instruction_code(const Uword code);
 void bad_oprand_B(const Uword code);
 
@@ -141,46 +142,7 @@ int step_LD() {
     Uword second_word;
     Uword operand_b_value;
 
-    switch (OPERAND_B) {
-        case ACC:
-            operand_b_value = cpub->acc;
-            break;
-        case IX:
-            operand_b_value = cpub->ix;
-            break;
-        case IMMEDIATE_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = second_word;
-            break;
-        case ABSOLUTE_PROGRAM_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x000 + second_word];
-            break;
-        case ABSOLUTE_DATA_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x100 + second_word];
-            break;
-        case IX_MODIFICATION_PROGRAM_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
-            break;
-        case IX_MODIFICATION_DATA_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
-            break;
-        default:
-            return RUN_HALT;
-    }
+    operand_b_value = get_operand_b_value(OPERAND_B);
 
     if (OPERAND_A == ACC) {
         cpub->acc = operand_b_value;
@@ -263,51 +225,14 @@ int step_ADD() {
         operand_a_value = cpub->ix;
     }
 
-    switch (OPERAND_B) {
-        case ACC:
-            operand_b_value = cpub->acc;
-            break;
-        case IX:
-            operand_b_value = cpub->ix;
-            break;
-        case IMMEDIATE_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = second_word;
-            break;
-        case ABSOLUTE_PROGRAM_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x000 + second_word];
-            break;
-        case ABSOLUTE_DATA_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x100 + second_word];
-            break;
-        case IX_MODIFICATION_PROGRAM_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
-            break;
-        case IX_MODIFICATION_DATA_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
-            break;
-        default:
-            return return_status;
-    }
+    operand_b_value = get_operand_b_value(OPERAND_B);
+
     int sum = operand_a_value + operand_b_value;
     Bit cf = chk_carry_flag(sum);
     Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
+    /* ADDはCFを使わない carryが出たらそれはoverflowである */
     set_flag(0, cf | vf, nf, zf);
 
     if (OPERAND_A == ACC) {
@@ -336,46 +261,8 @@ int step_ADC() {
         operand_a_value = cpub->ix;
     }
 
-    switch (OPERAND_B) {
-        case ACC:
-            operand_b_value = cpub->acc;
-            break;
-        case IX:
-            operand_b_value = cpub->ix;
-            break;
-        case IMMEDIATE_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = second_word;
-            break;
-        case ABSOLUTE_PROGRAM_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x000 + second_word];
-            break;
-        case ABSOLUTE_DATA_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x100 + second_word];
-            break;
-        case IX_MODIFICATION_PROGRAM_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
-            break;
-        case IX_MODIFICATION_DATA_ADDRESS:
-            MAR = cpub->pc;
-            cpub->pc++;
-            second_word = cpub->mem[0x000 + MAR];
-            operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
-            break;
-        default:
-            return return_status;
-    }
+    operand_b_value = get_operand_b_value(OPERAND_B);
+
     int carry = cpub->cf;
     int sum = operand_a_value + operand_b_value + carry;
     Bit cf = chk_carry_flag(sum);
@@ -469,6 +356,50 @@ Uword decrypt_operand_b(const Uword CODE) {
         operand_b = 0x02;
     }
     return operand_b;
+}
+
+Uword get_operand_b_value(const Uword OPERAND_B) {
+    Uword operand_b_value;
+    Uword second_word;
+    switch (OPERAND_B) {
+        case ACC:
+            operand_b_value = cpub->acc;
+            break;
+        case IX:
+            operand_b_value = cpub->ix;
+            break;
+        case IMMEDIATE_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = second_word;
+            break;
+        case ABSOLUTE_PROGRAM_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x000 + second_word];
+            break;
+        case ABSOLUTE_DATA_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x100 + second_word];
+            break;
+        case IX_MODIFICATION_PROGRAM_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
+            break;
+        case IX_MODIFICATION_DATA_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
+            break;
+    }
+    return operand_b_value;
 }
 
 void unknown_instruction_code(const Uword code) {
