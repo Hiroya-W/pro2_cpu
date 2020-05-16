@@ -17,6 +17,7 @@
 #define RCF 0x20
 #define SCF 0x2f
 #define ADD 0xB0
+#define ADC 0x90
 
 #define LD 0x60
 #define ST 0x70
@@ -36,6 +37,7 @@ int step_SCF();
 int step_ST();
 int step_LD();
 int step_ADD();
+int step_ADC();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
 Bit chk_overflow_flag(Uword num1, Uword num2, int ans);
@@ -105,6 +107,9 @@ int step(Cpub *cpub_) {
             break;
         case ADD:
             return_status = step_ADD();
+            break;
+        case ADC:
+            return_status = step_ADC();
             break;
         default:
             unknown_instruction_code(IR);
@@ -304,6 +309,80 @@ int step_ADD() {
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
     set_flag(0, cf | vf, nf, zf);
+
+    if (OPERAND_A == ACC) {
+        cpub->acc = sum & 0xff;
+    } else {
+        cpub->ix = sum & 0xff;
+    }
+
+    return_status = RUN_STEP;
+    return return_status;
+}
+
+int step_ADC() {
+    int return_status = RUN_HALT;
+
+    const Uword OPERAND_A = decrypt_operand_a(IR);
+    const Uword OPERAND_B = decrypt_operand_b(IR);
+
+    Uword operand_a_value;
+    Uword operand_b_value;
+    Uword second_word;
+
+    if (OPERAND_A == ACC) {
+        operand_a_value = cpub->acc;
+    } else {
+        operand_a_value = cpub->ix;
+    }
+
+    switch (OPERAND_B) {
+        case ACC:
+            operand_b_value = cpub->acc;
+            break;
+        case IX:
+            operand_b_value = cpub->ix;
+            break;
+        case IMMEDIATE_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = second_word;
+            break;
+        case ABSOLUTE_PROGRAM_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x000 + second_word];
+            break;
+        case ABSOLUTE_DATA_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x100 + second_word];
+            break;
+        case IX_MODIFICATION_PROGRAM_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x000 + cpub->ix + second_word];
+            break;
+        case IX_MODIFICATION_DATA_ADDRESS:
+            MAR = cpub->pc;
+            cpub->pc++;
+            second_word = cpub->mem[0x000 + MAR];
+            operand_b_value = cpub->mem[0x100 + cpub->ix + second_word];
+            break;
+        default:
+            return return_status;
+    }
+    int carry = cpub->cf;
+    int sum = operand_a_value + operand_b_value + carry;
+    Bit cf = chk_carry_flag(sum);
+    Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
+    Bit nf = chk_negative_flag(sum);
+    Bit zf = chk_zero_flag(sum & 0xff);
+    set_flag(cf, vf, nf, zf);
 
     if (OPERAND_A == ACC) {
         cpub->acc = sum & 0xff;
