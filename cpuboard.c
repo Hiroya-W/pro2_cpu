@@ -315,12 +315,12 @@ int step_SUB() {
     operand_b_value = (~operand_b_value) + 1;
 
     int sum = operand_a_value + operand_b_value;
-    Bit cf = chk_carry_flag(sum);
+    Bit cf = 0;
     Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
-    /* ADDはCFを使わない carryが出たらそれはoverflowである */
-    set_flag(0, cf | vf, nf, zf);
+
+    set_flag(cf, vf, nf, zf);
 
     if (OPERAND_A == ACC) {
         cpub->acc = sum & 0xff;
