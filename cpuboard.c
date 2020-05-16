@@ -17,10 +17,11 @@ enum Instruction_code {
     IN = 0x1f,
     RCF = 0x20,
     SCF = 0x2f,
+    LD = 0x60,
+    ST = 0x70,
     ADD = 0xB0,
     ADC = 0x90,
-    LD = 0x60,
-    ST = 0x70
+    SUB = 0xa0
 };
 
 enum Operand_B_3bits {
@@ -41,6 +42,7 @@ int step_ST();
 int step_LD();
 int step_ADD();
 int step_ADC();
+int step_SUB();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
 Bit chk_overflow_flag(Uword num1, Uword num2, int ans);
@@ -114,6 +116,9 @@ int step(Cpub *cpub_) {
             break;
         case ADC:
             return_status = step_ADC();
+            break;
+        case SUB:
+            return_status = step_SUB();
             break;
         default:
             unknown_instruction_code(IR);
@@ -270,6 +275,42 @@ int step_ADC() {
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
     set_flag(cf, vf, nf, zf);
+
+    if (OPERAND_A == ACC) {
+        cpub->acc = sum & 0xff;
+    } else {
+        cpub->ix = sum & 0xff;
+    }
+
+    return_status = RUN_STEP;
+    return return_status;
+}
+
+int step_SUB() {
+    int return_status = RUN_HALT;
+
+    const Uword OPERAND_A = decrypt_operand_a(IR);
+    const Uword OPERAND_B = decrypt_operand_b(IR);
+
+    Uword operand_a_value;
+    Uword operand_b_value;
+
+    if (OPERAND_A == ACC) {
+        operand_a_value = cpub->acc;
+    } else {
+        operand_a_value = cpub->ix;
+    }
+
+    operand_b_value = get_operand_b_value(OPERAND_B);
+    operand_b_value = (~operand_b_value) + 1;
+
+    int sum = operand_a_value + operand_b_value;
+    Bit cf = chk_carry_flag(sum);
+    Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
+    Bit nf = chk_negative_flag(sum);
+    Bit zf = chk_zero_flag(sum & 0xff);
+    /* ADDはCFを使わない carryが出たらそれはoverflowである */
+    set_flag(0, cf | vf, nf, zf);
 
     if (OPERAND_A == ACC) {
         cpub->acc = sum & 0xff;
