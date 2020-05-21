@@ -61,6 +61,7 @@ Bit chk_zero_flag(char ans);
 Uword decrypt_operand_a(const Uword code);
 Uword decrypt_operand_b(const Uword code);
 Uword get_operand_b_value(const Uword OPERAND_B);
+Uword get_operand_a_value(const Uword OPERAND_A);
 void store_value_to_register(const Uword OPERAND_A, const Uword value);
 void unknown_instruction_code(const Uword code);
 void bad_oprand_B(const Uword code);
@@ -191,11 +192,7 @@ int step_ST() {
     Uword operand_a_value;
     Uword second_word;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     MAR = cpub->pc;
     cpub->pc++;
@@ -247,11 +244,7 @@ int step_ADD() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
 
@@ -278,11 +271,7 @@ int step_ADC() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
 
@@ -309,11 +298,7 @@ int step_SUB() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
     operand_b_value = (~operand_b_value) + 1;
@@ -341,11 +326,7 @@ int step_SBC() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
     operand_b_value = (~operand_b_value) + 1;
@@ -373,11 +354,7 @@ int step_CMP() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     // SUB命令と同じ処理
     // ZFが立っていたらA=Bであることがわかる
@@ -405,11 +382,7 @@ int step_AND() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
 
@@ -435,11 +408,7 @@ int step_EOR() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
 
@@ -573,6 +542,17 @@ Uword decrypt_operand_b(const Uword CODE) {
         operand_b = 0x02;
     }
     return operand_b;
+}
+
+Uword get_operand_a_value(const Uword OPERAND_A) {
+    Uword operand_a_value;
+    if (OPERAND_A == ACC) {
+        operand_a_value = cpub->acc;
+    } else {
+        operand_a_value = cpub->ix;
+    }
+
+    return operand_a_value;
 }
 
 Uword get_operand_b_value(const Uword OPERAND_B) {
