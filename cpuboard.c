@@ -413,11 +413,7 @@ int step_OR() {
     Uword operand_a_value;
     Uword operand_b_value;
 
-    if (OPERAND_A == ACC) {
-        operand_a_value = cpub->acc;
-    } else {
-        operand_a_value = cpub->ix;
-    }
+    operand_a_value = get_operand_a_value(OPERAND_A);
 
     operand_b_value = get_operand_b_value(OPERAND_B);
 
@@ -428,11 +424,7 @@ int step_OR() {
     Bit zf = chk_zero_flag(ans);
     set_flag(cf, vf, nf, zf);
 
-    if (OPERAND_A == ACC) {
-        cpub->acc = ans;
-    } else {
-        cpub->ix = ans;
-    }
+    store_value_to_register(OPERAND_A, ans);
 
     return_status = RUN_STEP;
     return return_status;
