@@ -24,6 +24,7 @@ enum Instruction_code {
     SUB = 0xa0,
     SBC = 0x80,
     CMP = 0xf0,
+    AND = 0xe0,
     EOR = 0xC0,
     BBC = 0x30,
 };
@@ -49,6 +50,7 @@ int step_ADC();
 int step_SUB();
 int step_SBC();
 int step_CMP();
+int step_AND();
 int step_EOR();
 int step_BBC();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
@@ -133,6 +135,9 @@ int step(Cpub *cpub_) {
             break;
         case CMP:
             return_status = step_CMP();
+            break;
+        case AND:
+            return_status = step_AND();
             break;
         case EOR:
             return_status = step_EOR();
@@ -405,6 +410,40 @@ int step_CMP() {
     Bit zf = chk_zero_flag(sum & 0xff);
 
     set_flag(cf, vf, nf, zf);
+
+    return_status = RUN_STEP;
+    return return_status;
+}
+
+int step_AND() {
+    int return_status = RUN_HALT;
+
+    const Uword OPERAND_A = decrypt_operand_a(IR);
+    const Uword OPERAND_B = decrypt_operand_b(IR);
+
+    Uword operand_a_value;
+    Uword operand_b_value;
+
+    if (OPERAND_A == ACC) {
+        operand_a_value = cpub->acc;
+    } else {
+        operand_a_value = cpub->ix;
+    }
+
+    operand_b_value = get_operand_b_value(OPERAND_B);
+
+    Uword ans = operand_a_value & operand_b_value;
+    Bit cf = cpub->cf;
+    Bit vf = 0;
+    Bit nf = chk_negative_flag(ans);
+    Bit zf = chk_zero_flag(ans);
+    set_flag(cf, vf, nf, zf);
+
+    if (OPERAND_A == ACC) {
+        cpub->acc = ans;
+    } else {
+        cpub->ix = ans;
+    }
 
     return_status = RUN_STEP;
     return return_status;
