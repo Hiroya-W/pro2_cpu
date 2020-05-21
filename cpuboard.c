@@ -487,10 +487,53 @@ int step_BBC() {
     second_word = cpub->mem[0x000 + MAR];
 
     switch (BRANCH_CODE) {
+        case ALWAYS:
+            cpub->pc = second_word;
+            break;
         case NOT_ZERO:
-            if (!cpub->zf) {
-                cpub->pc = second_word;
-            }
+            if (!cpub->zf) cpub->pc = second_word;
+            break;
+        case ZERO_OR_POSITIVE:
+            if (!cpub->nf) cpub->pc = second_word;
+            break;
+        case POSITIVE:
+            if (!(cpub->nf | cpub->zf)) cpub->pc = second_word;
+            break;
+        case NO_INPUT:
+            if (!cpub->ibuf->flag) cpub->pc = second_word;
+            break;
+        case NO_CARRY:
+            if (!cpub->cf) cpub->pc = second_word;
+            break;
+        case GREATER_THAN_OR_EQUAL:
+            if (!(cpub->vf ^ cpub->nf)) cpub->pc = second_word;
+            break;
+        case GREATER_THAN:
+            if (!((cpub->vf ^ cpub->nf) | cpub->zf)) cpub->pc = second_word;
+            break;
+        case OVERFLOW:
+            if (cpub->vf) cpub->pc = second_word;
+            break;
+        case ZERO:
+            if (cpub->zf) cpub->pc = second_word;
+            break;
+        case NEGATIVE:
+            if (cpub->nf) cpub->pc = second_word;
+            break;
+        case ZERO_OR_NEGATIVE:
+            if (cpub->nf | cpub->zf) cpub->pc = second_word;
+            break;
+        case NO_OUTPUT:
+            if (cpub->obuf.flag) cpub->pc = second_word;
+            break;
+        case CARRY:
+            if (cpub->cf) cpub->cf = second_word;
+            break;
+        case LESS_THAN:
+            if (cpub->vf ^ cpub->nf) cpub->pc = second_word;
+            break;
+        case LESS_THAN_OR_EQUAL:
+            if ((cpub->vf ^ cpub->nf) | cpub->zf) cpub->pc = second_word;
             break;
     }
 
@@ -640,7 +683,7 @@ void store_value_to_register(const Uword OPERAND_A, const Uword value) {
 }
 
 void unknown_instruction_code(const Uword code) {
-    fprintf(stderr, "%#x is unknown instruction code.\n", code);
+    fprintf(stderr, "%#x is unknown or not implemented instruction code.\n", code);
 }
 
 void bad_oprand_B(const Uword code) {
