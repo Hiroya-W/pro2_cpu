@@ -43,26 +43,26 @@ enum Operand_B_3bits {
     IX_MODIFICATION_DATA_ADDRESS = 0x07
 };
 
-int step_OUT();
-int step_IN();
-int step_RCF();
-int step_SCF();
+void step_OUT();
+void step_IN();
+void step_RCF();
+void step_SCF();
 int step_ST();
-int step_LD();
-int step_ADD();
-int step_ADC();
-int step_SUB();
-int step_SBC();
-int step_CMP();
-int step_AND();
-int step_OR();
-int step_EOR();
-int step_SRSM();
+void step_LD();
+void step_ADD();
+void step_ADC();
+void step_SUB();
+void step_SBC();
+void step_CMP();
+void step_AND();
+void step_OR();
+void step_EOR();
+void step_SRSM();
 void R_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf);
 void L_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf);
-int step_BBC();
-int step_JAL();
-int step_JR();
+void step_BBC();
+void step_JAL();
+void step_JR();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
 Bit chk_overflow_flag(Uword num1, Uword num2, int ans);
@@ -84,7 +84,7 @@ Cpub *cpub;
 int step(Cpub *cpub_) {
     cpub = cpub_;
 
-    int return_status = RUN_HALT;
+    int return_status = RUN_STEP;
 
     const Uword MASK = 0xf0;
 
@@ -103,9 +103,9 @@ int step(Cpub *cpub_) {
             } else if (((IR & 0xfc) | 0x03) == HLT) {
                 return_status = RUN_HALT;
             } else if (IR == JAL) {
-                return_status = step_JAL();
+                step_JAL();
             } else if (IR == JR) {
-                return_status = step_JR();
+                step_JR();
             } else {
                 unknown_instruction_code(IR);
                 return_status = RUN_HALT;
@@ -116,9 +116,9 @@ int step(Cpub *cpub_) {
              * OUT + IN
              */
             if ((IR & 0xf8) == OUT) {
-                return_status = step_OUT();
+                step_OUT();
             } else {
-                return_status = step_IN();
+                step_IN();
             }
             break;
         case 0x20:
@@ -126,46 +126,46 @@ int step(Cpub *cpub_) {
              * RCF + SCF
              */
             if ((IR & 0xf8) == RCF) {
-                return_status = step_RCF();
+                step_RCF();
             } else {
-                return_status = step_SCF();
+                step_SCF();
             }
             break;
         case LD:
-            return_status = step_LD();
+            step_LD();
             break;
         case ST:
             return_status = step_ST();
             break;
         case ADD:
-            return_status = step_ADD();
+            step_ADD();
             break;
         case ADC:
-            return_status = step_ADC();
+            step_ADC();
             break;
         case SUB:
-            return_status = step_SUB();
+            step_SUB();
             break;
         case SBC:
-            return_status = step_SBC();
+            step_SBC();
             break;
         case CMP:
-            return_status = step_CMP();
+            step_CMP();
             break;
         case AND:
-            return_status = step_AND();
+            step_AND();
             break;
         case OR:
-            return_status = step_OR();
+            step_OR();
             break;
         case EOR:
-            return_status = step_EOR();
+            step_EOR();
             break;
         case SRSM:
-            return_status = step_SRSM();
+            step_SRSM();
             break;
         case BBC:
-            return_status = step_BBC();
+            step_BBC();
             break;
         default:
             unknown_instruction_code(IR);
@@ -176,21 +176,21 @@ int step(Cpub *cpub_) {
     return return_status;
 }
 
-int step_OUT() { return RUN_HALT; }
+void step_OUT() { return; }
 
-int step_IN() { return RUN_HALT; }
+void step_IN() { return; }
 
-int step_RCF() {
+void step_RCF() {
     cpub->cf = 0;
-    return RUN_STEP;
+    return;
 }
 
-int step_SCF() {
+void step_SCF() {
     cpub->cf = 1;
-    return RUN_STEP;
+    return;
 }
 
-int step_LD() {
+void step_LD() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -200,11 +200,11 @@ int step_LD() {
 
     store_value_to_register(OPERAND_A, operand_b_value);
 
-    return RUN_STEP;
+    return;
 }
 
 int step_ST() {
-    int return_status = RUN_HALT;
+    int return_status = RUN_STEP;
 
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
@@ -234,30 +234,22 @@ int step_ST() {
             break;
         case ABSOLUTE_PROGRAM_ADDRESS:
             cpub->mem[0x000 + second_word] = operand_a_value;
-            return_status = RUN_STEP;
             break;
         case ABSOLUTE_DATA_ADDRESS:
             cpub->mem[0x100 + second_word] = operand_a_value;
-            return_status = RUN_STEP;
             break;
         case IX_MODIFICATION_PROGRAM_ADDRESS:
             cpub->mem[0x000 + cpub->ix + second_word] = operand_a_value;
-            return_status = RUN_STEP;
             break;
         case IX_MODIFICATION_DATA_ADDRESS:
             cpub->mem[0x100 + cpub->ix + second_word] = operand_a_value;
-            return_status = RUN_STEP;
             break;
-        default:
-            return_status = RUN_HALT;
     }
 
     return return_status;
 }
 
-int step_ADD() {
-    int return_status = RUN_HALT;
-
+void step_ADD() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -278,13 +270,10 @@ int step_ADD() {
 
     store_value_to_register(OPERAND_A, sum & 0xff);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_ADC() {
-    int return_status = RUN_HALT;
-
+void step_ADC() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -305,13 +294,10 @@ int step_ADC() {
 
     store_value_to_register(OPERAND_A, sum & 0xff);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_SUB() {
-    int return_status = RUN_HALT;
-
+void step_SUB() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -333,13 +319,10 @@ int step_SUB() {
 
     store_value_to_register(OPERAND_A, sum & 0xff);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_SBC() {
-    int return_status = RUN_HALT;
-
+void step_SBC() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -361,13 +344,10 @@ int step_SBC() {
 
     store_value_to_register(OPERAND_A, sum & 0xff);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_CMP() {
-    int return_status = RUN_HALT;
-
+void step_CMP() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -389,13 +369,10 @@ int step_CMP() {
 
     set_flag(cf, vf, nf, zf);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_AND() {
-    int return_status = RUN_HALT;
-
+void step_AND() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -415,13 +392,10 @@ int step_AND() {
 
     store_value_to_register(OPERAND_A, ans);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_OR() {
-    int return_status = RUN_HALT;
-
+void step_OR() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -441,13 +415,10 @@ int step_OR() {
 
     store_value_to_register(OPERAND_A, ans);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_EOR() {
-    int return_status = RUN_HALT;
-
+void step_EOR() {
     const Uword OPERAND_A = decrypt_operand_a(IR);
     const Uword OPERAND_B = decrypt_operand_b(IR);
 
@@ -467,11 +438,10 @@ int step_EOR() {
 
     store_value_to_register(OPERAND_A, ans);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_SRSM() {
+void step_SRSM() {
     enum Shift_Mode {
         SRA,
         SLA,
@@ -483,7 +453,6 @@ int step_SRSM() {
         RLL
     };
 
-    int return_status = RUN_HALT;
     const Uword OPERAND_A = decrypt_operand_a(IR);
     Uword operand_a_value;
 
@@ -532,8 +501,7 @@ int step_SRSM() {
 
     store_value_to_register(OPERAND_A, ans);
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
 void R_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf) {
@@ -560,7 +528,7 @@ void L_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit 
     return;
 }
 
-int step_BBC() {
+void step_BBC() {
     enum Branch {
         ALWAYS,
         NOT_ZERO,
@@ -579,8 +547,6 @@ int step_BBC() {
         LESS_THAN,
         LESS_THAN_OR_EQUAL
     };
-
-    int return_status = RUN_HALT;
 
     const Uword MASK = 0x0f;
     const Uword BRANCH_CODE = IR & MASK;
@@ -641,11 +607,10 @@ int step_BBC() {
             break;
     }
 
-    return_status = RUN_STEP;
-    return return_status;
+    return;
 }
 
-int step_JAL() {
+void step_JAL() {
     Uword operand_b_value;
 
     MAR = cpub->pc;
@@ -655,12 +620,12 @@ int step_JAL() {
     cpub->acc = cpub->pc;
     cpub->pc = operand_b_value;
 
-    return RUN_STEP;
+    return;
 }
 
-int step_JR() {
+void step_JR() {
     cpub->pc = cpub->acc;
-    return RUN_STEP;
+    return;
 }
 
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf) {
