@@ -27,6 +27,7 @@ enum Instruction_code {
     AND = 0xe0,
     OR = 0xd0,
     EOR = 0xC0,
+    SRSM = 0x40,
     BBC = 0x30,
 };
 
@@ -54,6 +55,9 @@ int step_CMP();
 int step_AND();
 int step_OR();
 int step_EOR();
+int step_SRSM();
+void R_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf);
+void L_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf);
 int step_BBC();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
@@ -148,6 +152,9 @@ int step(Cpub *cpub_) {
             break;
         case EOR:
             return_status = step_EOR();
+            break;
+        case SRSM:
+            return_status = step_SRSM();
             break;
         case BBC:
             return_status = step_BBC();
@@ -454,6 +461,95 @@ int step_EOR() {
 
     return_status = RUN_STEP;
     return return_status;
+}
+
+int step_SRSM() {
+    enum Shift_Mode {
+        SRA,
+        SLA,
+        SRL,
+        SLL,
+        RRA,
+        RLA,
+        RRL,
+        RLL
+    };
+
+    int return_status = RUN_HALT;
+    const Uword OPERAND_A = decrypt_operand_a(IR);
+    Uword operand_a_value;
+
+    operand_a_value = get_operand_a_value(OPERAND_A);
+
+    Uword ans;
+    Bit cf, vf, nf, zf;
+
+    const Uword MODE = IR & 0x07;
+    switch (MODE) {
+        case SRA:
+            R_Rotate(operand_a_value, operand_a_value & 0x80, &ans, &cf, &vf);
+            break;
+        case SLA:
+            L_Rotate(operand_a_value, 0, &ans, &cf, &vf);
+            // SLAでは符号ビットが変化したらオーバーフローフラグをセットする
+            vf = (operand_a_value ^ ans) & 0x80;
+            break;
+        case SRL:
+            R_Rotate(operand_a_value, 0, &ans, &cf, &vf);
+            break;
+        case SLL:
+            L_Rotate(operand_a_value, 0, &ans, &cf, &vf);
+            break;
+        case RRA:
+            R_Rotate(operand_a_value, cpub->cf, &ans, &cf, &vf);
+            break;
+        case RLA:
+            L_Rotate(operand_a_value, cpub->cf, &ans, &cf, &vf);
+            // SLAと同様にオーバーフローフラグをセットしておく
+            vf = (operand_a_value ^ ans) & 0x80;
+            break;
+        case RRL:
+            // MSBにLSBの値をセットする
+            R_Rotate(operand_a_value, operand_a_value & 0x01, &ans, &cf, &vf);
+            break;
+        case RLL:
+            // LSBにMSBの値をセットする
+            L_Rotate(operand_a_value, operand_a_value & 0x80, &ans, &cf, &vf);
+            break;
+    }
+    nf = chk_negative_flag(ans);
+    zf = chk_zero_flag(ans);
+
+    set_flag(cf, vf, nf, zf);
+
+    store_value_to_register(OPERAND_A, ans);
+
+    return_status = RUN_STEP;
+    return return_status;
+}
+
+void R_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf) {
+    Uword ans;
+    ans = VALUE >> 1;
+    // MSBへセットされるビット
+    const Uword MSB = PUSH_BIT ? 0x80 : 0x00;
+    ans = (ans & 0x7f) | MSB;
+    *out = ans;
+    *cf = VALUE & 0x01;
+    *vf = 0;
+    return;
+}
+
+void L_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf) {
+    Uword ans;
+    ans = VALUE << 1;
+    // LSBへセットされるビット
+    const Uword LSB = PUSH_BIT ? 0x01 : 0x00;
+    ans = (ans & 0xfe) | LSB;
+    *out = ans;
+    *cf = VALUE & 0x80;
+    *vf = 0;
+    return;
 }
 
 int step_BBC() {
