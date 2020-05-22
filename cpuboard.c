@@ -27,6 +27,7 @@ enum Instruction_code {
     AND = 0xe0,
     OR = 0xd0,
     EOR = 0xC0,
+    SRSM = 0x40,
     BBC = 0x30,
 };
 
@@ -54,6 +55,7 @@ int step_CMP();
 int step_AND();
 int step_OR();
 int step_EOR();
+int step_SRSM();
 int step_BBC();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
@@ -148,6 +150,9 @@ int step(Cpub *cpub_) {
             break;
         case EOR:
             return_status = step_EOR();
+            break;
+        case SRSM:
+            return_status = step_SRSM();
             break;
         case BBC:
             return_status = step_BBC();
@@ -448,6 +453,114 @@ int step_EOR() {
     Bit vf = 0;
     Bit nf = chk_negative_flag(ans);
     Bit zf = chk_zero_flag(ans);
+    set_flag(cf, vf, nf, zf);
+
+    store_value_to_register(OPERAND_A, ans);
+
+    return_status = RUN_STEP;
+    return return_status;
+}
+
+void R_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, int *cf, int *vf) {
+    Uword ans;
+    ans = VALUE >> 1;
+    // MSBへセットされるビット
+    const Uword MSB = PUSH_BIT ? 0x80 : 0;
+    ans = (ans & 0xfe) | MSB;
+    *out = ans;
+    *cf = VALUE & 0x01;
+    *vf = 0;
+    return;
+}
+
+int step_SRSM() {
+    enum Shift_Mode {
+        SRA,
+        SLA,
+        SRL,
+        SLL,
+        RRA,
+        RLA,
+        RRL,
+        RLL
+    };
+
+    int return_status = RUN_HALT;
+    const Uword OPERAND_A = decrypt_operand_a(IR);
+    Uword operand_a_value;
+
+    operand_a_value = get_operand_a_value(OPERAND_A);
+
+    Uword ans;
+    Bit cf, vf, nf, zf;
+
+    const Uword MODE = IR & 0x07;
+    switch (MODE) {
+        case SRA:
+            ans = operand_a_value >> 1;
+            // 計算前の符号をMSBにセットする
+            if (operand_a_value & 0x80) {
+                ans |= 0x80;
+            } else {
+                ans &= 0x7f;
+            }
+            cf = operand_a_value & 0x01;
+            vf = 0;
+            break;
+        case SLA:
+            ans = operand_a_value << 1;
+            // LSBは0
+            ans &= 0xfe;
+            cf = operand_a_value & 0x80;
+            // 符号ビットが変化したらオーバーフローしてる
+            vf = (operand_a_value ^ ans) & 0x80;
+            break;
+        case SRL:
+            ans = operand_a_value >> 1;
+            // MSBは0
+            ans &= 0x7f;
+            cf = operand_a_value & 0x01;
+            vf = 0;
+            break;
+        case SLL:
+            ans = operand_a_value << 1;
+            // LSBは0
+            ans &= 0xfe;
+            cf = operand_a_value & 0x80;
+            vf = 0;
+            break;
+        case RRA:
+            ans = operand_a_value >> 1;
+            // MSBをCFの値にセットする
+            ans = (ans & 0xef) | (cpub->cf << 7);
+            cf = operand_a_value & 0x01;
+            vf = 0;
+            break;
+        case RLA:
+            ans = operand_a_value << 1;
+            // LSBをCFの値にセットする
+            ans = (ans & 0xfe) | cpub->cf;
+            cf = operand_a_value & 0x80;
+            vf = (operand_a_value ^ ans) & 0x80;
+            break;
+        case RRL:
+            ans = operand_a_value >> 1;
+            // MSBにLSBの値を持ってくる
+            ans = (ans & 0x7f) | ((operand_a_value & 1) << 7);
+            cf = operand_a_value & 0x01;
+            vf = 0;
+            break;
+        case RLL:
+            ans = operand_a_value << 1;
+            // LSBにMSBの値を持ってくる
+            ans = (ans & 0xfe) | ((operand_a_value >> 7) & 1);
+            cf = operand_a_value & 0x80;
+            vf = 0;
+            break;
+    }
+    nf = chk_negative_flag(ans);
+    zf = chk_zero_flag(ans);
+
     set_flag(cf, vf, nf, zf);
 
     store_value_to_register(OPERAND_A, ans);
