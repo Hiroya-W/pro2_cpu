@@ -176,9 +176,17 @@ int step(Cpub *cpub_) {
     return return_status;
 }
 
-void step_OUT() { return; }
+void step_OUT() {
+    cpub->obuf.buf = cpub->acc;
+    cpub->obuf.flag = 1;
+    return;
+}
 
-void step_IN() { return; }
+void step_IN() {
+    cpub->acc = cpub->ibuf->buf;
+    cpub->ibuf->flag = 0;
+    return;
+}
 
 void step_RCF() {
     cpub->cf = 0;
