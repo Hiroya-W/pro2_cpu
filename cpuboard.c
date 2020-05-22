@@ -29,6 +29,8 @@ enum Instruction_code {
     EOR = 0xC0,
     SRSM = 0x40,
     BBC = 0x30,
+    JAL = 0x0a,
+    JR = 0x0b
 };
 
 enum Operand_B_3bits {
@@ -59,6 +61,8 @@ int step_SRSM();
 void R_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf);
 void L_Rotate(const Uword VALUE, const Uword PUSH_BIT, Uword *out, Bit *cf, Bit *vf);
 int step_BBC();
+int step_JAL();
+int step_JR();
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf);
 Bit chk_carry_flag(int ans);
 Bit chk_overflow_flag(Uword num1, Uword num2, int ans);
@@ -98,6 +102,10 @@ int step(Cpub *cpub_) {
                 return_status = RUN_STEP;
             } else if (((IR & 0xfc) | 0x03) == HLT) {
                 return_status = RUN_HALT;
+            } else if (IR == JAL) {
+                return_status = step_JAL();
+            } else if (IR == JR) {
+                return_status = step_JR();
             } else {
                 unknown_instruction_code(IR);
                 return_status = RUN_HALT;
@@ -635,6 +643,24 @@ int step_BBC() {
 
     return_status = RUN_STEP;
     return return_status;
+}
+
+int step_JAL() {
+    Uword operand_b_value;
+
+    MAR = cpub->pc;
+    cpub->pc++;
+    operand_b_value = cpub->mem[0x000 + MAR];
+
+    cpub->acc = cpub->pc;
+    cpub->pc = operand_b_value;
+
+    return RUN_STEP;
+}
+
+int step_JR() {
+    cpub->pc = cpub->acc;
+    return RUN_STEP;
 }
 
 void set_flag(Bit cf, Bit vf, Bit nf, Bit zf) {
