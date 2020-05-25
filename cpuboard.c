@@ -342,7 +342,8 @@ void step_SBC() {
     operand_b_value = get_operand_b_value(OPERAND_B);
     operand_b_value = (~operand_b_value) + 1;
 
-    int sum = operand_a_value + operand_b_value;
+    int borrow = cpub->cf;
+    int sum = operand_a_value + operand_b_value - borrow;
     Bit cf = !chk_carry_flag(sum);
     Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
     Bit nf = chk_negative_flag(sum);
