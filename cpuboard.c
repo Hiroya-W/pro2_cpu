@@ -274,7 +274,7 @@ void step_ADD() {
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
     /* ADDはCFを使わない carryが出たらそれはoverflowである */
-    set_flag(0, cf | vf, nf, zf);
+    set_flag(cpub->cf, cf | vf, nf, zf);
 
     store_value_to_register(OPERAND_A, sum & 0xff);
 
@@ -318,7 +318,7 @@ void step_SUB() {
     operand_b_value = (~operand_b_value) + 1;
 
     int sum = operand_a_value + operand_b_value;
-    Bit cf = 0;
+    Bit cf = cpub->cf;
     Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
@@ -370,7 +370,7 @@ void step_CMP() {
     operand_b_value = (~operand_b_value) + 1;
 
     int sum = operand_a_value + operand_b_value;
-    Bit cf = 0;
+    Bit cf = cpub->cf;
     Bit vf = chk_overflow_flag(operand_a_value, operand_b_value, sum);
     Bit nf = chk_negative_flag(sum);
     Bit zf = chk_zero_flag(sum & 0xff);
